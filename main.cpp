@@ -373,7 +373,7 @@ int SoPhanTu(){
 	scanf_s("%d", &i);
 	switch (i){
 		case 1:{
-			   n = 10;
+			   n = 100;
 			   return n;
 			}
 		case 2:{
