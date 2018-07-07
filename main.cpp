@@ -57,22 +57,15 @@ void Swap_BigNum(void*a, void*b){
 	Equal(a, b, sizeof(BIGNUM));
 	Equal(b, &c, sizeof(BIGNUM));
 }
-void* ChiaThapPhan_Int(void*a, int exp){
+void* ChiaThapPhan_Int(void*a, void* exp){
 	int *c=new int[1];
-	*c = *(int*)a / exp;
+	*c = *(int*)a / *(int*)exp;
 	return c;
 }
-void* ChiaThapPhan_BigNum(void*a, int exp){
+void* ChiaThapPhan_BigNum(void*a, void* exp){
 	BIGNUM*c = new BIGNUM[1];
 	Equal(c, a, sizeof(BIGNUM));
-	int i;
-	for (i = 0;; i++){
-		if (exp == 1){
-			break;
-		}
-		exp /= 10;
-	}
-	*(int*)c -= i;
+	*(int*)c -= *(int*)exp - 1;
 	return c;
 }
 int* ModThapPhan_Int(void* a, int exp){
@@ -82,9 +75,10 @@ int* ModThapPhan_Int(void* a, int exp){
 }
 int*ModThapPhan_BigNum(void*a, int exp){
 	int *c = new int[1];
+	int j = 1;
 	for (int i = *(int*)a - 1; i >= 0; i--){
 		*c = *(short*)((char*)a + sizeof(int)+i*sizeof(short));
-		if (exp == 10){
+		if ( exp==10){
 			return c;
 		}
 		exp /= 10;
@@ -92,11 +86,11 @@ int*ModThapPhan_BigNum(void*a, int exp){
 	*c = 0;
 	return c;
 }
-int DieuKien_Int(void*DieuKien, void*a, int exp){
-	return *(int*)ChiaThapPhan_Int(a, exp);
+void Exp_Int( int& exp){
+	 exp*=10;
 }
-int DieuKien_BigNum(void*DieuKien, void*a, int exp){
-	return --*(int*)DieuKien;
+void Exp_BigNum( int& exp){
+	exp++;
 }
 void Merge(void* a, int left, int mid, int right,int size,int(*KiemTra)(void*,void*),void(*Swap)(void*,void*)){
 	void *temp; // Khoi tao mang tam de sap xep
@@ -305,7 +299,7 @@ void SheSort(void* a, int n, int size, int(*KiemTra)(void*, void*), void(*Swap)(
 		}
 	}
 }
-void RadSort(void *a, int n, int size, int(*KiemTra)(void*, void*), void(*Swap)(void*, void*),void*(*ChiaThapPhan)(void*,int),int*(*Mod)(void*,int),int(*DieuKien)(void*,void*,int)){
+void RadSort(void *a, int n, int size, int(*KiemTra)(void*, void*), void(*Swap)(void*, void*),void*(*ChiaThapPhan)(void*,void*),int*(*Mod)(void*,int),void(*Exp)(int&)){
 	int i,exp=1;
 	//, m = a[0]
 	char*m = new char[size];
@@ -318,14 +312,15 @@ void RadSort(void *a, int n, int size, int(*KiemTra)(void*, void*), void(*Swap)(
 		if (KiemTra(a_i,m))//a[i] > m
 			Equal(m, a_i, size);
 	}
-	int*Dieu_Kien = (int*)ChiaThapPhan(m, exp);
+	int*Dieu_Kien = (int*)ChiaThapPhan(m, &exp);
+
 	while (*Dieu_Kien > 0)
 	{
 		int bucket[10] = { 0 };
 		for (i = 0; i < n; i++){
 			char*a_i = (char*)a + i*size;
 			//bucket[a[i] / exp % 10]++;
-			bucket[*Mod(ChiaThapPhan(a_i, exp), 10)]++;
+			bucket[*Mod(ChiaThapPhan(a_i, &exp), 10)]++;
 		}
 		for (i = 1; i < 10; i++){
 			bucket[i] += bucket[i - 1];
@@ -333,7 +328,7 @@ void RadSort(void *a, int n, int size, int(*KiemTra)(void*, void*), void(*Swap)(
 		for (i = n - 1; i >= 0; i--){
 			char*a_i = (char*)a + i*size;
 			//b[--bucket[a[i]/exp % 10]] = a_i;
-			int d = --bucket[*Mod(ChiaThapPhan(a_i, exp), 10)];
+			int d = --bucket[*Mod(ChiaThapPhan(a_i, &exp), 10)];
 			Equal(b+d*size, a_i, size);
 		}
 		for (i = 0; i < n; i++){
@@ -342,8 +337,8 @@ void RadSort(void *a, int n, int size, int(*KiemTra)(void*, void*), void(*Swap)(
 			//a[i] = b[i];
 			Equal(a_i, b_i, size);
 		}
-		exp *= 10;
-		*Dieu_Kien = DieuKien(Dieu_Kien,m, exp);
+		Exp(exp);
+		Dieu_Kien = (int*)ChiaThapPhan(m, &exp);
 	}
 	delete[]Dieu_Kien;
 	delete[]b;
@@ -424,7 +419,7 @@ void XoaMang_Int(int*a){
 void XoaMang_BigNum(BIGNUM*a){
 	delete[]a;
 }
-void SapXep(void*a, int n, int i, int size, int(*KiemTra)(void*, void*), void(*Swap)(void*, void*), void*(*Div)(void*, int), int*(*Mod)(void*, int), int(*DieuKien)(void*, void*, int)){
+void SapXep(void*a, int n, int i, int size, int(*KiemTra)(void*, void*), void(*Swap)(void*, void*), void*(*Div)(void*, void*), int*(*Mod)(void*, int), void(*Exp)( int&)){
 	switch (i){
 	case 1:{
 			   HeaSort(a, n, size, KiemTra, Swap);
@@ -455,7 +450,7 @@ void SapXep(void*a, int n, int i, int size, int(*KiemTra)(void*, void*), void(*S
 			   break;
 	}
 	default:{
-				RadSort(a, n, size, KiemTra, Swap, Div, Mod,DieuKien);
+				RadSort(a, n, size, KiemTra, Swap, Div, Mod,Exp);
 				break;
 		}
 	}
@@ -484,7 +479,7 @@ void main(){
 		printf("Ban chon kieu sap xep: ");
 		scanf_s("%d", &i);
 		start = clock();
-		SapXep(A, n, i, sizeof(int), KiemTraLonHon_Int, Swap_Int, ChiaThapPhan_Int, ModThapPhan_Int,DieuKien_Int);
+		SapXep(A, n, i, sizeof(int), KiemTraLonHon_Int, Swap_Int, ChiaThapPhan_Int, ModThapPhan_Int,Exp_Int);
 		end = clock();
 		runtime = (double)(end - start) / CLOCKS_PER_SEC;
 		XuatMang_Int(A, n);
@@ -502,7 +497,7 @@ void main(){
 		printf("Ban chon kieu sap xep: ");
 		scanf_s("%d", &i);
 		start = clock();
-		SapXep(B, n, i, sizeof(BIGNUM), KiemTraLonHon_BigNum, Swap_BigNum, ChiaThapPhan_BigNum, ModThapPhan_BigNum,DieuKien_BigNum);
+		SapXep(B, n, i, sizeof(BIGNUM), KiemTraLonHon_BigNum, Swap_BigNum, ChiaThapPhan_BigNum, ModThapPhan_BigNum,Exp_BigNum);
 		end = clock();
 		runtime = (double)(end - start) / CLOCKS_PER_SEC;
 		XuatMang_BigNum(B, n, max_lenght);
